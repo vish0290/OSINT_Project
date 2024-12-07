@@ -1,0 +1,3 @@
+mistral_key = Mistral API Key
+agent_id = Mistral Agent ID
+DB_URL = Database URL
