@@ -4,13 +4,14 @@ import pandas as pd
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
+load_dotenv()
 
 def mongo_connect():
     db_url = os.getenv("DB_URL")
     try:
-        client = MongoClient(f"")
+        client = MongoClient(db_url)
         db = client.reddit
-        post_db = db['post']
+        post_db = db['post_new']
         comment_db = db['comment']
         return post_db, comment_db
     except Exception as e:
@@ -42,7 +43,7 @@ after_post_id = None
 post_db, comment_db = mongo_connect()
 
 
-for i in range(2):
+for i in range(101):
     params = {
         'limit': 100,
         't':'all',
@@ -52,10 +53,11 @@ for i in range(2):
     print(f"Request {i+1} - Status code: {response.status_code}")
     if response.status_code != 200:
         raise Exception("Failed to fetch data")
-    
     json_data = response.json()
     df = pd.DataFrame(json_data['data']['children'])
-    upload_to_mongo(df, post_db)
+    df2 = pd.DataFrame(list(df['data']))
+    df2 = df2[['id','title','selftext','ups','subreddit','created_utc','num_comments','url']]
+    upload_to_mongo(df2, post_db)
     after_post_id = json_data['data']['after']
     time.sleep(2)
 
