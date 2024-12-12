@@ -4,13 +4,13 @@ import pandas as pd
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
-
+load_dotenv()
 def mongo_connect():
     db_url = os.getenv("DB_URL")
     try:
-        client = MongoClient(f"")
+        client = MongoClient(db_url)
         db = client.reddit
-        post_db = db['post']
+        post_db = db['post_hot']
         comment_db = db['comment']
         return post_db, comment_db
     except Exception as e:
@@ -33,7 +33,7 @@ def get10rec(post_db):
 
 base_url = "https://www.reddit.com"
 endpoint = "/r/startups"
-category = "/new"
+category = "/hot"
 
 url = base_url + endpoint + category + ".json"
 after_post_id = None
@@ -42,7 +42,7 @@ after_post_id = None
 post_db, comment_db = mongo_connect()
 
 
-for i in range(2):
+for i in range(100):
     params = {
         'limit': 100,
         't':'all',
@@ -55,9 +55,13 @@ for i in range(2):
     
     json_data = response.json()
     df = pd.DataFrame(json_data['data']['children'])
-    upload_to_mongo(df, post_db)
+    df2= pd.DataFrame(list(df['data']))  
+    df2=df2[['id','title','selftext','ups','subreddit','created_utc','num_comments','url']]
+    upload_to_mongo(df2, post_db)
     after_post_id = json_data['data']['after']
-    time.sleep(2)
+    time.sleep(3)
 
 # res = get10rec(post_db)
 # print(res[0]['data']['title']) 
+# print(f"{df.columns} this are the columns")
+# df.head()
