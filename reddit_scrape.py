@@ -34,7 +34,7 @@ def get10rec(post_db):
 
 base_url = "https://www.reddit.com"
 endpoint = "/r/startups"
-category = "/new"
+category = "/hot"
 
 url = base_url + endpoint + category + ".json"
 after_post_id = None
@@ -42,24 +42,27 @@ after_post_id = None
 # dataset = []
 post_db, comment_db = mongo_connect()
 
-
-for i in range(101):
+df3 = pd.DataFrame()
+for i in range(20):
     params = {
         'limit': 100,
         't':'all',
         'after': after_post_id
     }
-    response = httpx.get(url, params=params)
-    print(f"Request {i+1} - Status code: {response.status_code}")
-    if response.status_code != 200:
-        raise Exception("Failed to fetch data")
+    try:
+        response = httpx.get(url, params=params)
+        print(f"Request {i+1} - Status code: {response.status_code}")
+    except Exception as e:
+        print(f"request failed:{i+1} {str(e)}")
     json_data = response.json()
     df = pd.DataFrame(json_data['data']['children'])
     df2 = pd.DataFrame(list(df['data']))
     df2 = df2[['id','title','selftext','ups','subreddit','created_utc','num_comments','url']]
-    upload_to_mongo(df2, post_db)
+    df3 = pd.concat([df3,df2])
+    # upload_to_mongo(df2, post_db)
     after_post_id = json_data['data']['after']
     time.sleep(2)
 
 # res = get10rec(post_db)
 # print(res[0]['data']['title']) 
+df3.to_csv('final_reddit_data.csv',index=False)
